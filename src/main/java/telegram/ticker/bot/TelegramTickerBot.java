@@ -47,9 +47,6 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
     // Classe utilitária para buscar indicadores de ações americanas
     private final USStockDataFetcher usStockDataFetcher;
 
-    // Classe utilitária para encurtar URLs
-    private final UrlShortener urlShortener;
-
     // Padrão para validar tickers de Fundos Imobiliários (ex: HGLG11, MXRF11)
     // Aceita 4 letras maiúsculas/minúsculas seguidas de 2 dígitos
     private static final Pattern FII_TICKER_PATTERN = Pattern.compile("^[A-Za-z]{4}\\d{2}$");
@@ -90,19 +87,6 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
      * @param disableSslVerification Se true, desabilita verificação SSL (apenas para NewsFetcher)
      */
     public TelegramTickerBot(String botToken, String botUsername, boolean disableSslVerification) {
-        this(botToken, botUsername, disableSslVerification, null);
-    }
-
-    /**
-     * Construtor do bot com opção de desabilitar verificação SSL e token do TinyURL.
-     *
-     * @param botToken Token do bot do Telegram
-     * @param botUsername Nome de usuário do bot
-     * @param disableSslVerification Se true, desabilita verificação SSL
-     * @param tinyUrlApiToken Token da API TinyURL v2 (pode ser null)
-     */
-    public TelegramTickerBot(String botToken, String botUsername, boolean disableSslVerification,
-                             String tinyUrlApiToken) {
         super(new DefaultBotOptions());
         this.botToken = botToken;
         this.botUsername = botUsername;
@@ -111,7 +95,6 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
         this.cryptoDataFetcher = new CryptoDataFetcher(disableSslVerification);
         this.stockDataFetcher = new StockDataFetcher(disableSslVerification);
         this.usStockDataFetcher = new USStockDataFetcher(disableSslVerification);
-        this.urlShortener = new UrlShortener(disableSslVerification, tinyUrlApiToken);
     }
 
     @Override
@@ -262,7 +245,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
+                        response.append("   🔗 ").append(news.getLink()).append("\n");
                     }
                     response.append("\n");
                 }
@@ -308,7 +291,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
+                        response.append("   🔗 ").append(news.getLink()).append("\n");
                     }
                     response.append("\n");
                 }
@@ -355,7 +338,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
+                        response.append("   🔗 ").append(news.getLink()).append("\n");
                     }
                     response.append("\n");
                 }
@@ -401,7 +384,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
+                        response.append("   🔗 ").append(news.getLink()).append("\n");
                     }
                     response.append("\n");
                 }

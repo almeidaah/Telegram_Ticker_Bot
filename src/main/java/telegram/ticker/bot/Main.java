@@ -63,14 +63,8 @@ public class Main {
             // Inicializa a API do Telegram Bots
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
-            // Obtém o token da API TinyURL (opcional)
-            String tinyUrlApiToken = dotenv.get("TINYURL_API_TOKEN");
-            if (tinyUrlApiToken == null || tinyUrlApiToken.isEmpty()) {
-                System.out.println("⚠️ TINYURL_API_TOKEN não configurado — URLs não serão encurtadas.");
-            }
-
-            // Registra o bot (passa flag de SSL e token TinyURL)
-            TelegramTickerBot tickerBot = new TelegramTickerBot(botToken, botUsername, disableSslVerification, tinyUrlApiToken);
+            // Registra o bot (passa flag de SSL)
+            TelegramTickerBot tickerBot = new TelegramTickerBot(botToken, botUsername, disableSslVerification);
 
             // Se SSL desabilitado, injeta HttpClient trust-all no bot via reflection
             // (a lib TelegramBots usa Apache HttpClient internamente e ignora SSLContext.setDefault)
