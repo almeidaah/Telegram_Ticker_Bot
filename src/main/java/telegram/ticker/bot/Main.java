@@ -79,6 +79,15 @@ public class Main {
                 injectTrustAllIntoSession(session);
             }
 
+            // Graceful shutdown hook for Docker/cloud environments
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("🛑 Desligando bot graciosamente...");
+                if (session.isRunning()) {
+                    session.stop();
+                }
+                System.out.println("👋 Bot encerrado.");
+            }));
+
             System.out.println("✅ Bot iniciado com sucesso!");
             System.out.println("📱 Username: @" + botUsername);
             System.out.println("📰 Fonte de notícias: Google News RSS");

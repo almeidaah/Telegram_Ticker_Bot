@@ -1,0 +1,14 @@
+target/
+.env
+.git/
+.gitignore
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.DS_Store
+*.md
+screenshots/
+sample_screenshots/
+dependency-reduced-pom.xml
