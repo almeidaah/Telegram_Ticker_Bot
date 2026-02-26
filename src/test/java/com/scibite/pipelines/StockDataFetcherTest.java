@@ -2,42 +2,28 @@ package com.scibite.pipelines;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Testes unitários para StockDataFetcher (ações brasileiras / Ibovespa).
- * Utiliza mocks do HttpClient para não depender de rede.
+ * Utiliza StubHttpClient para não depender de rede.
  */
-@ExtendWith(MockitoExtension.class)
 class StockDataFetcherTest {
 
-    @Mock
-    private HttpClient httpClient;
-
-    @Mock
-    private HttpResponse<String> httpResponse;
-
+    private StubHttpClient stubClient;
     private StockDataFetcher fetcher;
 
     @BeforeEach
     void setUp() {
-        fetcher = new StockDataFetcher(httpClient);
+        stubClient = new StubHttpClient();
+        fetcher = new StockDataFetcher(stubClient);
     }
 
     // ========== fetchData - HTML Parsing (StatusInvest structure) ==========
 
     @Test
-    void fetchDataShouldExtractIndicatorsFromStatusInvestStructure() throws Exception {
+    void fetchDataShouldExtractIndicatorsFromStatusInvestStructure() {
         String html = """
                 <html><body>
                 <div class="info">
@@ -63,10 +49,7 @@ class StockDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         StockData result = fetcher.fetchData("PETR3");
 
@@ -79,7 +62,7 @@ class StockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleAlternativeIndicatorNames() throws Exception {
+    void fetchDataShouldHandleAlternativeIndicatorNames() {
         String html = """
                 <html><body>
                 <div class="info">
@@ -97,10 +80,7 @@ class StockDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         StockData result = fetcher.fetchData("VALE3");
 
@@ -111,28 +91,19 @@ class StockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldConvertTickerToLowerCaseForUrl() throws Exception {
-        String html = "<html><body></body></html>";
-
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldPreserveTicker() {
+        stubClient.withResponse(200, "<html><body></body></html>");
 
         StockData result = fetcher.fetchData("PETR3");
 
-        // The result ticker should be the original input
         assertEquals("PETR3", result.getTicker());
-        assertNotNull(result);
     }
 
     // ========== fetchData - Error Cases ==========
 
     @Test
-    void fetchDataShouldReturnNDOnHttpError() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(404);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnHttpError() {
+        stubClient.withResponse(404, "");
 
         StockData result = fetcher.fetchData("INVALID3");
 
@@ -148,10 +119,8 @@ class StockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnServerError() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(500);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnServerError() {
+        stubClient.withResponse(500, "");
 
         StockData result = fetcher.fetchData("PETR3");
 
@@ -160,9 +129,8 @@ class StockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnIOException() throws Exception {
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new java.io.IOException("Timeout"));
+    void fetchDataShouldReturnNDOnIOException() {
+        stubClient.withIOException("Timeout");
 
         StockData result = fetcher.fetchData("PETR3");
 
@@ -172,9 +140,8 @@ class StockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnInterruptedException() throws Exception {
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new InterruptedException("Interrupted"));
+    void fetchDataShouldReturnNDOnInterruptedException() {
+        stubClient.withInterruptedException("Interrupted");
 
         StockData result = fetcher.fetchData("PETR3");
 
@@ -183,11 +150,8 @@ class StockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnEmptyHtml() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn("<html><body></body></html>");
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnEmptyHtml() {
+        stubClient.withResponse(200, "<html><body></body></html>");
 
         StockData result = fetcher.fetchData("PETR3");
 
@@ -205,7 +169,7 @@ class StockDataFetcherTest {
     // ========== fetchData - Mixed Content ==========
 
     @Test
-    void fetchDataShouldExtractFromTextContainingElements() throws Exception {
+    void fetchDataShouldExtractFromTextContainingElements() {
         String html = """
                 <html><body>
                 <div>
@@ -223,10 +187,7 @@ class StockDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         StockData result = fetcher.fetchData("ITUB4");
 
@@ -237,7 +198,7 @@ class StockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleNegativeValues() throws Exception {
+    void fetchDataShouldHandleNegativeValues() {
         String html = """
                 <html><body>
                 <div class="info">
@@ -251,10 +212,7 @@ class StockDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         StockData result = fetcher.fetchData("OIBR3");
 

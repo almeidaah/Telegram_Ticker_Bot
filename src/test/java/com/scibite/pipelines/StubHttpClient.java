@@ -2,14 +2,17 @@ package com.scibite.pipelines;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.net.Authenticator;
 import java.net.CookieHandler;
 import java.net.ProxySelector;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -101,9 +104,9 @@ class StubHttpClient extends HttpClient {
         @Override public String body() { return body; }
         @Override public HttpRequest request() { return request; }
         @Override public Optional<HttpResponse<String>> previousResponse() { return Optional.empty(); }
-        @Override public HttpHeaders headers() { return HttpHeaders.of(java.util.Map.of(), (a, b) -> true); }
+        @Override public HttpHeaders headers() { return HttpHeaders.of(Map.of(), (a, b) -> true); }
         @Override public java.net.URI uri() { return request.uri(); }
         @Override public Version version() { return Version.HTTP_2; }
-        @Override public javax.net.ssl.SSLSession sslSession() { return Optional.<javax.net.ssl.SSLSession>empty().orElse(null); }
+        @Override public Optional<SSLSession> sslSession() { return Optional.empty(); }
     }
 }

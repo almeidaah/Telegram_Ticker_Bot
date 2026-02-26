@@ -3,37 +3,22 @@ package com.scibite.pipelines;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Testes unitários para CryptoDataFetcher.
- * Utiliza mocks do HttpClient para não depender de rede.
+ * Utiliza StubHttpClient para não depender de rede.
  */
-@ExtendWith(MockitoExtension.class)
 class CryptoDataFetcherTest {
 
-    @Mock
-    private HttpClient httpClient;
-
-    @Mock
-    private HttpResponse<String> httpResponse;
-
+    private StubHttpClient stubClient;
     private CryptoDataFetcher fetcher;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        fetcher = new CryptoDataFetcher(httpClient, objectMapper);
+        stubClient = new StubHttpClient();
+        fetcher = new CryptoDataFetcher(stubClient, new ObjectMapper());
     }
 
     // ========== isKnownCrypto ==========
@@ -64,7 +49,7 @@ class CryptoDataFetcherTest {
     // ========== fetchData - Success ==========
 
     @Test
-    void fetchDataShouldReturnParsedCryptoDataOnSuccess() throws Exception {
+    void fetchDataShouldReturnParsedCryptoDataOnSuccess() {
         String jsonResponse = """
                 [
                   {
@@ -78,10 +63,7 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("BTC");
 
@@ -93,7 +75,7 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleLowPriceCrypto() throws Exception {
+    void fetchDataShouldHandleLowPriceCrypto() {
         String jsonResponse = """
                 [
                   {
@@ -107,10 +89,7 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("SHIB");
 
@@ -122,7 +101,7 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleTrillionMarketCap() throws Exception {
+    void fetchDataShouldHandleTrillionMarketCap() {
         String jsonResponse = """
                 [
                   {
@@ -136,10 +115,7 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("BTC");
 
@@ -147,7 +123,7 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleMillionMarketCap() throws Exception {
+    void fetchDataShouldHandleMillionMarketCap() {
         String jsonResponse = """
                 [
                   {
@@ -161,10 +137,7 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("SOL");
 
@@ -172,7 +145,7 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldConvertSymbolToUpperCase() throws Exception {
+    void fetchDataShouldConvertSymbolToUpperCase() {
         String jsonResponse = """
                 [
                   {
@@ -186,10 +159,7 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("eth");
 
@@ -199,10 +169,8 @@ class CryptoDataFetcherTest {
     // ========== fetchData - Error Cases ==========
 
     @Test
-    void fetchDataShouldReturnNDOnHttpError() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(500);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnHttpError() {
+        stubClient.withResponse(500, "");
 
         CryptoData result = fetcher.fetchData("BTC");
 
@@ -213,11 +181,8 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnEmptyJsonArray() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn("[]");
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnEmptyJsonArray() {
+        stubClient.withResponse(200, "[]");
 
         CryptoData result = fetcher.fetchData("BTC");
 
@@ -227,9 +192,8 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnException() throws Exception {
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new java.io.IOException("Connection refused"));
+    void fetchDataShouldReturnNDOnIOException() {
+        stubClient.withIOException("Connection refused");
 
         CryptoData result = fetcher.fetchData("BTC");
 
@@ -238,7 +202,17 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleNullMarketCapRank() throws Exception {
+    void fetchDataShouldReturnNDOnInterruptedException() {
+        stubClient.withInterruptedException("Interrupted");
+
+        CryptoData result = fetcher.fetchData("BTC");
+
+        assertEquals("BTC", result.getSymbol());
+        assertEquals("N/D", result.getPrice());
+    }
+
+    @Test
+    void fetchDataShouldHandleNullMarketCapRank() {
         String jsonResponse = """
                 [
                   {
@@ -252,10 +226,7 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("BTC");
 
@@ -263,7 +234,7 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleZeroPriceAndMarketCap() throws Exception {
+    void fetchDataShouldHandleZeroPriceAndMarketCap() {
         String jsonResponse = """
                 [
                   {
@@ -277,10 +248,7 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("BTC");
 
@@ -289,7 +257,7 @@ class CryptoDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleMissingFields() throws Exception {
+    void fetchDataShouldHandleMissingFields() {
         String jsonResponse = """
                 [
                   {
@@ -299,15 +267,11 @@ class CryptoDataFetcherTest {
                 ]
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         CryptoData result = fetcher.fetchData("BTC");
 
         assertEquals("BTC", result.getSymbol());
-        // name defaults to symbol when missing
         assertEquals("N/D", result.getPrice());
         assertEquals("N/D", result.getMarketCap());
         assertEquals("N/D", result.getRank());
@@ -325,5 +289,22 @@ class CryptoDataFetcherTest {
     void getCryptoNameShouldReturnSymbolForUnknownCrypto() {
         String name = fetcher.getCryptoName("XXXXXX");
         assertEquals("XXXXXX", name);
+    }
+
+    // ========== Constructor ==========
+
+    @Test
+    void defaultConstructorShouldNotThrow() {
+        assertDoesNotThrow(() -> new CryptoDataFetcher());
+    }
+
+    @Test
+    void sslDisabledConstructorShouldNotThrow() {
+        assertDoesNotThrow(() -> new CryptoDataFetcher(true));
+    }
+
+    @Test
+    void sslEnabledConstructorShouldNotThrow() {
+        assertDoesNotThrow(() -> new CryptoDataFetcher(false));
     }
 }

@@ -16,8 +16,8 @@ import java.security.cert.X509Certificate;
 /**
  * Classe principal que inicializa o bot do Telegram.
  *
- * Este bot recebe tickers de fundos imobiliários (FIIs) e retorna
- * notícias recentes de cada fundo usando o Google News RSS como fonte.
+ * Este bot recebe tickers de ações, fundos imobiliários e criptomoedas
+ * e retorna indicadores financeiros e notícias recentes usando o Google News RSS.
  *
  * Configuração necessária no arquivo .env:
  * - TELEGRAM_BOT_TOKEN: Token do bot fornecido pelo BotFather
@@ -28,7 +28,7 @@ import java.security.cert.X509Certificate;
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("🚀 Iniciando FII News Bot...");
+        System.out.println("🚀 Iniciando Telegram Ticker Bot...");
 
         try {
             // Carrega variáveis de ambiente do arquivo .env
@@ -63,16 +63,16 @@ public class Main {
             // Inicializa a API do Telegram Bots
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
 
-            // Registra o bot FII News (passa flag de SSL)
-            FIINewsBot fiiNewsBot = new FIINewsBot(botToken, botUsername, disableSslVerification);
+            // Registra o bot (passa flag de SSL)
+            TelegramTickerBot tickerBot = new TelegramTickerBot(botToken, botUsername, disableSslVerification);
 
             // Se SSL desabilitado, injeta HttpClient trust-all no bot via reflection
             // (a lib TelegramBots usa Apache HttpClient internamente e ignora SSLContext.setDefault)
             if (disableSslVerification) {
-                injectTrustAllHttpClient(fiiNewsBot);
+                injectTrustAllHttpClient(tickerBot);
             }
 
-            BotSession session = botsApi.registerBot(fiiNewsBot);
+            BotSession session = botsApi.registerBot(tickerBot);
 
             // Também injeta HttpClient trust-all no ReaderThread do long-polling
             if (disableSslVerification) {
@@ -146,7 +146,7 @@ public class Main {
     /**
      * Injeta um HttpClient trust-all no DefaultAbsSender (usado para chamadas à API do Telegram).
      */
-    private static void injectTrustAllHttpClient(FIINewsBot bot) {
+    private static void injectTrustAllHttpClient(TelegramTickerBot bot) {
         try {
             Field httpClientField = DefaultAbsSender.class.getDeclaredField("httpClient");
             httpClientField.setAccessible(true);

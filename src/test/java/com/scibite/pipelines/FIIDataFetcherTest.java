@@ -2,42 +2,28 @@ package com.scibite.pipelines;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Testes unitários para FIIDataFetcher.
- * Utiliza mocks do HttpClient para não depender de rede.
+ * Utiliza StubHttpClient para não depender de rede.
  */
-@ExtendWith(MockitoExtension.class)
 class FIIDataFetcherTest {
 
-    @Mock
-    private HttpClient httpClient;
-
-    @Mock
-    private HttpResponse<String> httpResponse;
-
+    private StubHttpClient stubClient;
     private FIIDataFetcher fetcher;
 
     @BeforeEach
     void setUp() {
-        fetcher = new FIIDataFetcher(httpClient);
+        stubClient = new StubHttpClient();
+        fetcher = new FIIDataFetcher(stubClient);
     }
 
     // ========== fetchData - HTML Parsing ==========
 
     @Test
-    void fetchDataShouldExtractDYFromHtml() throws Exception {
+    void fetchDataShouldExtractDYFromHtml() {
         String html = """
                 <html><body>
                 <div class="indicators">
@@ -61,10 +47,7 @@ class FIIDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         FIIData result = fetcher.fetchData("HGLG11");
 
@@ -74,17 +57,11 @@ class FIIDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldConvertTickerToUpperCase() throws Exception {
-        String html = "<html><body><p>Empty page</p></body></html>";
-
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldConvertTickerToUpperCase() {
+        stubClient.withResponse(200, "<html><body><p>Empty</p></body></html>");
 
         FIIData result = fetcher.fetchData("hglg11");
 
-        // Ticker is stored as-is from input (upper-cased by URL construction)
         assertNotNull(result);
         assertNotNull(result.getTicker());
     }
@@ -92,10 +69,8 @@ class FIIDataFetcherTest {
     // ========== fetchData - Error Cases ==========
 
     @Test
-    void fetchDataShouldReturnNDOnHttpError() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(404);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnHttpError() {
+        stubClient.withResponse(404, "");
 
         FIIData result = fetcher.fetchData("INVALID11");
 
@@ -107,10 +82,8 @@ class FIIDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnServerError() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(500);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnServerError() {
+        stubClient.withResponse(500, "");
 
         FIIData result = fetcher.fetchData("HGLG11");
 
@@ -119,9 +92,8 @@ class FIIDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnConnectionException() throws Exception {
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new java.io.IOException("Connection refused"));
+    void fetchDataShouldReturnNDOnConnectionException() {
+        stubClient.withIOException("Connection refused");
 
         FIIData result = fetcher.fetchData("HGLG11");
 
@@ -133,9 +105,8 @@ class FIIDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnInterruptedException() throws Exception {
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new InterruptedException("Interrupted"));
+    void fetchDataShouldReturnNDOnInterruptedException() {
+        stubClient.withInterruptedException("Interrupted");
 
         FIIData result = fetcher.fetchData("HGLG11");
 
@@ -144,11 +115,8 @@ class FIIDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNDOnEmptyHtml() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn("<html><body></body></html>");
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNDOnEmptyHtml() {
+        stubClient.withResponse(200, "<html><body></body></html>");
 
         FIIData result = fetcher.fetchData("HGLG11");
 
@@ -162,7 +130,7 @@ class FIIDataFetcherTest {
     // ========== fetchData - Various HTML structures ==========
 
     @Test
-    void fetchDataShouldExtractFromNestedDivStructure() throws Exception {
+    void fetchDataShouldExtractFromNestedDivStructure() {
         String html = """
                 <html><body>
                 <div class="info-container">
@@ -178,21 +146,17 @@ class FIIDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         FIIData result = fetcher.fetchData("XPLG11");
 
         assertEquals("XPLG11", result.getTicker());
-        // May or may not extract depending on exact DOM traversal, but should not throw
         assertNotNull(result.getDividendYield());
         assertNotNull(result.getPVp());
     }
 
     @Test
-    void fetchDataShouldExtractLargeNumbersForCotistas() throws Exception {
+    void fetchDataShouldExtractLargeNumbersForCotistas() {
         String html = """
                 <html><body>
                 <div>
@@ -206,10 +170,7 @@ class FIIDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         FIIData result = fetcher.fetchData("HGLG11");
 
@@ -218,7 +179,7 @@ class FIIDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleDifferentIndicatorNames() throws Exception {
+    void fetchDataShouldHandleDifferentIndicatorNames() {
         String html = """
                 <html><body>
                 <div>
@@ -240,10 +201,7 @@ class FIIDataFetcherTest {
                 </body></html>
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(html);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, html);
 
         FIIData result = fetcher.fetchData("MXRF11");
 

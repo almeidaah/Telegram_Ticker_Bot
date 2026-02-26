@@ -3,43 +3,28 @@ package com.scibite.pipelines;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * Testes unitários para USStockDataFetcher (ações americanas).
- * Utiliza mocks do HttpClient para não depender de rede.
+ * Utiliza StubHttpClient para não depender de rede.
  */
-@ExtendWith(MockitoExtension.class)
 class USStockDataFetcherTest {
 
-    @Mock
-    private HttpClient httpClient;
-
-    @Mock
-    private HttpResponse<String> httpResponse;
-
+    private StubHttpClient stubClient;
     private USStockDataFetcher fetcher;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
-        fetcher = new USStockDataFetcher(httpClient, objectMapper);
+        stubClient = new StubHttpClient();
+        fetcher = new USStockDataFetcher(stubClient, new ObjectMapper());
     }
 
     // ========== fetchData - Success ==========
 
     @Test
-    void fetchDataShouldReturnParsedUSStockDataOnSuccess() throws Exception {
+    void fetchDataShouldReturnParsedUSStockDataOnSuccess() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -71,10 +56,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -94,7 +76,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldConvertTickerToUpperCase() throws Exception {
+    void fetchDataShouldConvertTickerToUpperCase() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -109,10 +91,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("aapl");
 
@@ -120,7 +99,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldUseFmtValueWhenAvailable() throws Exception {
+    void fetchDataShouldUseFmtValueWhenAvailable() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -139,20 +118,16 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
-        // Should use fmt (formatted) value
         assertEquals("28.46", result.getPe());
         assertEquals("22.12", result.getEvEbitda());
     }
 
     @Test
-    void fetchDataShouldFallbackToRawWhenFmtIsAbsent() throws Exception {
+    void fetchDataShouldFallbackToRawWhenFmtIsAbsent() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -169,10 +144,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -180,7 +152,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldCalculateFcfYield() throws Exception {
+    void fetchDataShouldCalculateFcfYield() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -199,19 +171,15 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
-        // FCF Yield = 50B / 1T = 5%
         assertEquals("5.00%", result.getFcfYield());
     }
 
     @Test
-    void fetchDataShouldCalculateDebtEbitda() throws Exception {
+    void fetchDataShouldCalculateDebtEbitda() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -229,19 +197,15 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
-        // Debt/EBITDA = 100B / 50B = 2.0
         assertEquals("2.00x", result.getDebtEbitda());
     }
 
     @Test
-    void fetchDataShouldFormatPercentValues() throws Exception {
+    void fetchDataShouldFormatPercentValues() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -262,10 +226,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("MSFT");
 
@@ -278,10 +239,8 @@ class USStockDataFetcherTest {
     // ========== fetchData - Error Cases ==========
 
     @Test
-    void fetchDataShouldReturnNAOnHttpError() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(404);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNAOnHttpError() {
+        stubClient.withResponse(404, "");
 
         USStockData result = fetcher.fetchData("INVALID");
 
@@ -301,10 +260,8 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNAOnServerError() throws Exception {
-        when(httpResponse.statusCode()).thenReturn(500);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+    void fetchDataShouldReturnNAOnServerError() {
+        stubClient.withResponse(500, "");
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -312,7 +269,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNAOnEmptyResult() throws Exception {
+    void fetchDataShouldReturnNAOnEmptyResult() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -321,10 +278,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -333,9 +287,8 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNAOnIOException() throws Exception {
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new java.io.IOException("Connection reset"));
+    void fetchDataShouldReturnNAOnIOException() {
+        stubClient.withIOException("Connection reset");
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -345,9 +298,8 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNAOnInterruptedException() throws Exception {
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenThrow(new InterruptedException("Interrupted"));
+    void fetchDataShouldReturnNAOnInterruptedException() {
+        stubClient.withInterruptedException("Interrupted");
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -356,7 +308,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNAForMissingFields() throws Exception {
+    void fetchDataShouldReturnNAForMissingFields() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -371,10 +323,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -394,7 +343,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldHandleNullFieldValues() throws Exception {
+    void fetchDataShouldHandleNullFieldValues() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -417,10 +366,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -432,7 +378,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNAWhenFcfOrMarketCapIsZero() throws Exception {
+    void fetchDataShouldReturnNAWhenFcfOrMarketCapIsZero() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -451,10 +397,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 
@@ -462,7 +405,7 @@ class USStockDataFetcherTest {
     }
 
     @Test
-    void fetchDataShouldReturnNAWhenDebtOrEbitdaIsZero() throws Exception {
+    void fetchDataShouldReturnNAWhenDebtOrEbitdaIsZero() {
         String jsonResponse = """
                 {
                   "quoteSummary": {
@@ -480,10 +423,7 @@ class USStockDataFetcherTest {
                 }
                 """;
 
-        when(httpResponse.statusCode()).thenReturn(200);
-        when(httpResponse.body()).thenReturn(jsonResponse);
-        when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
-                .thenReturn(httpResponse);
+        stubClient.withResponse(200, jsonResponse);
 
         USStockData result = fetcher.fetchData("AAPL");
 

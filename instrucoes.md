@@ -1,33 +1,27 @@
-# 📘 Instruções — FIIS-bot
+# 📘 Instruções — Telegram Ticker Bot
 
 ## Resumo do Projeto
 
-O **FIIS-bot** é um **bot do Telegram** (`@fii_news_notifier_bot`) que funciona como um agregador de informações financeiras. Ele cobre **4 tipos de ativos**:
+O **Telegram Ticker Bot** é um **bot do Telegram** que funciona como um agregador de informações financeiras. Ele cobre **4 tipos de ativos**:
 
 ## 📊 Ativos Suportados
 
 | Tipo | Padrão do Ticker | Exemplo | Fonte de Dados |
 |------|-------------------|---------|----------------|
-| **FIIs** (Fundos Imobiliários) | `XXXX11` | `HGLG11, MXRF11` | Funds Explorer |
 | **Ações Ibovespa** | `XXXX3` ou `XXXX4` | `PETR3, VALE3` | StatusInvest |
-| **Ações EUA** | Prefixo `US:` | `US:AAPL, US:MSFT` | Yahoo Finance |
+| **Ações EUA** | Prefixo `$` | `$AAPL, $MSFT` | Yahoo Finance |
+| **Fundos Imobiliários** | `XXXX11` | `HGLG11, MXRF11` | Funds Explorer |
 | **Criptomoedas** | Símbolo | `BTC, ETH, SOL` | CoinGecko |
 
 ## 🔄 Como funciona
 
 1. **Usuário envia tickers** no chat do Telegram (pode misturar tipos)
-2. O bot **classifica** automaticamente cada ticker (FII, ação BR, ação EUA ou crypto)
+2. O bot **classifica** automaticamente cada ticker (ação BR, ação US, fundos ou crypto)
 3. **Busca indicadores fundamentalistas** via scraping/APIs (P/L, DY, P/VP, ROE, etc.)
 4. **Busca até 3 notícias recentes** (máximo 1 mês) no Google News RSS
 5. **Retorna tudo formatado** em tabelas + links das notícias
 
 ## 📋 Indicadores por ativo
-
-### FIIs (Fundos Imobiliários)
-- Dividend Yield
-- P/VP (Preço/Valor Patrimonial)
-- Número de Cotistas
-- Número de Imóveis
 
 ### Ações Ibovespa
 - P/L (Preço/Lucro)
@@ -53,6 +47,12 @@ O **FIIS-bot** é um **bot do Telegram** (`@fii_news_notifier_bot`) que funciona
 - Dividend Yield
 - Payout Ratio
 
+### Fundos Imobiliários
+- Dividend Yield
+- P/VP (Preço/Valor Patrimonial)
+- Número de Cotistas
+- Número de Imóveis
+
 ### Criptomoedas
 - Preço atual (USD)
 - Market Cap
@@ -61,33 +61,33 @@ O **FIIS-bot** é um **bot do Telegram** (`@fii_news_notifier_bot`) que funciona
 ## 🚀 Como rodar o projeto
 
 ### Pré-requisitos
-- Java 11+
+- Java 17+
 - Maven 3.6+
 - Arquivo `.env` com as variáveis:
   ```
-  BOT_TOKEN=seu_token_do_telegram
-  BOT_USERNAME=seu_username_do_bot
+  TELEGRAM_BOT_TOKEN=seu_token_do_telegram
+  TELEGRAM_BOT_USERNAME=seu_username_do_bot
   ```
 
 ### Compilar e executar
 ```bash
 mvn clean package
-java -jar target/FIIS-bot-1.0-SNAPSHOT.jar
+java -jar target/Telegram_Ticker_Bot-1.0-SNAPSHOT.jar
 ```
 
 ## 💬 Como usar no Telegram
 
-1. Abra o Telegram e procure por **@fii_news_notifier_bot**
+1. Abra o Telegram e procure por seu bot
 2. Envie `/start` para ver as instruções
 3. Envie os tickers separados por vírgula:
 
 ### Exemplos de uso
 ```
-HGLG11, MXRF11              → FIIs
 PETR3, VALE3, ITUB4          → Ações Ibovespa
-US:AAPL, US:MSFT, US:GOOGL   → Ações EUA
+$AAPL, $MSFT, $GOOGL         → Ações EUA
+HGLG11, MXRF11               → Fundos Imobiliários
 BTC, ETH, SOL                → Criptomoedas
-HGLG11, PETR3, US:AAPL, BTC  → Misto (todos os tipos)
+PETR3, $AAPL, HGLG11, BTC    → Misto (todos os tipos)
 ```
 
 ## 🏗️ Stack Técnica
@@ -102,7 +102,7 @@ HGLG11, PETR3, US:AAPL, BTC  → Misto (todos os tipos)
 
 ```bash
 # Verificar processo
-pgrep -f "FIIS-bot" && echo "Rodando" || echo "Parado"
+pgrep -f "Telegram_Ticker_Bot" && echo "Rodando" || echo "Parado"
 
 # Testar conexão com o Telegram
 curl -s "https://api.telegram.org/bot<SEU_TOKEN>/getMe" | python3 -m json.tool

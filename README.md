@@ -1,13 +1,16 @@
-# FII News Bot 📰
+# Telegram Ticker Bot 📰
 
-Bot do Telegram para buscar notícias de Fundos Imobiliários (FIIs) brasileiros usando o Google News RSS como fonte.
+Bot do Telegram para buscar indicadores financeiros e notícias de ativos brasileiros, americanos e criptomoedas usando o Google News RSS como fonte.
 
 ## 🚀 Funcionalidades
 
-- Recebe lista de tickers de FIIs separados por vírgula
-- Busca notícias recentes de cada fundo no Google News
-- Retorna até 3 notícias por fundo
-- Formatação amigável com emojis
+- Suporta **Ações Brasileiras** (Ibovespa) — P/L, DY, P/VP, ROE, Dív/EBITDA, LPA
+- Suporta **Ações Americanas** (US Stocks) — P/E, P/S, EV/EBITDA, PEG, ROE, FCF Yield
+- Suporta **Fundos Imobiliários** — Dividend Yield, P/VP, Cotistas, Imóveis
+- Suporta **Criptomoedas** — Preço, Market Cap, Ranking
+- Busca notícias recentes de cada ativo no Google News
+- Retorna até 3 notícias por ativo (último mês)
+- Formatação amigável com tabelas e emojis
 
 ## 📋 Pré-requisitos
 
@@ -36,7 +39,7 @@ mvn clean package
 ### Executar o bot
 
 ```bash
-java -jar target/FIIS-bot-1.0-SNAPSHOT.jar
+java -jar target/Telegram_Ticker_Bot-1.0-SNAPSHOT.jar
 ```
 
 Ou usando Maven:
@@ -48,32 +51,49 @@ mvn exec:java -Dexec.mainClass="com.scibite.pipelines.Main"
 ## 💬 Como usar o bot
 
 1. Abra o Telegram e encontre seu bot pelo username
-2. Envie uma mensagem com os códigos dos FIIs separados por vírgulas
+2. Envie uma mensagem com os códigos dos ativos separados por vírgulas
+3. Use `$` antes de tickers americanos
 
-**Exemplo:**
+**Exemplos:**
+```
+PETR3, VALE3, ITUB4
+```
+```
+$AAPL, $MSFT, $GOOGL
+```
 ```
 HGLG11, KNRI11, MXRF11
+```
+```
+BTC, ETH, SOL
+```
+```
+PETR3, $AAPL, HGLG11, BTC
 ```
 
 **Resposta:**
 ```
-📊 Notícias de FIIs
+📊 Indicadores e Notícias de Ações
 
-📰 HGLG11
-   👉 Nova emissão de cotas é aprovada para o fundo
+📈 PETR3
+┌────────────────┬────────────┐
+│ P/L            │       8.45 │
+│ Div. Yield     │      12.3% │
+│ P/VP           │       1.12 │
+...
+└────────────────┴────────────┘
+
+   👉 Petrobras anuncia novo plano de investimentos
    🔗 https://news.google.com/...
 
-🏢 KNRI11 — Notícia recente não encontrada.
-
-📰 MXRF11
-   👉 Fundo anuncia dividendos acima do esperado
+   👉 Preço do petróleo influencia ações da PETR3
    🔗 https://news.google.com/...
 ```
 
 ## 📁 Estrutura do Projeto
 
 ```
-FIIS-bot/
+Telegram_Ticker_Bot/
 ├── pom.xml                          # Configuração Maven
 ├── .env                             # Variáveis de ambiente (não versionar!)
 ├── .gitignore                       # Arquivos ignorados pelo Git
@@ -82,16 +102,24 @@ FIIS-bot/
     └── main/
         └── java/
             └── com/scibite/pipelines/
-                ├── Main.java        # Classe principal
-                ├── FIINewsBot.java  # Bot do Telegram
-                ├── NewsFetcher.java # Busca de notícias
-                └── NewsItem.java    # Modelo de notícia
+                ├── Main.java               # Classe principal
+                ├── TelegramTickerBot.java  # Bot do Telegram
+                ├── NewsFetcher.java        # Busca de notícias
+                ├── NewsItem.java           # Modelo de notícia
+                ├── FIIData.java            # Dados de fundos imobiliários
+                ├── FIIDataFetcher.java     # Busca dados de fundos
+                ├── StockData.java          # Dados de ações BR
+                ├── StockDataFetcher.java   # Busca dados de ações BR
+                ├── USStockData.java        # Dados de ações US
+                ├── USStockDataFetcher.java # Busca dados de ações US
+                ├── CryptoData.java         # Dados de criptomoedas
+                └── CryptoDataFetcher.java  # Busca dados de crypto
 ```
 
 ## 🔍 Detalhes Técnicos
 
 ### Fonte de Notícias
-O bot utiliza o **Google News RSS** para buscar notícias. A busca é feita com a query `{TICKER} FII` para melhorar a precisão dos resultados.
+O bot utiliza o **Google News RSS** para buscar notícias. A busca é feita com queries específicas para cada tipo de ativo.
 
 URL do feed: `https://news.google.com/rss/search?q={query}&hl=pt-BR&gl=BR&ceid=BR:pt-419`
 
@@ -162,7 +190,7 @@ Este bot usa **long polling** (não precisa de porta HTTP aberta), então funcio
 
 1. **Crie uma conta** em [railway.app](https://railway.app) com GitHub
 
-2. **Novo projeto** → "Deploy from GitHub repo" → selecione `FIIS-bot`
+2. **Novo projeto** → "Deploy from GitHub repo" → selecione `Telegram_Ticker_Bot`
 
 3. **Configure as variáveis de ambiente** no painel do Railway:
    - `TELEGRAM_BOT_TOKEN` = seu token
@@ -199,12 +227,12 @@ Melhor opção se você quer um servidor de verdade, com recursos generosos e se
    ```bash
    # No seu PC, faça build e envie:
    mvn clean package -DskipTests
-   scp -i sua_chave.pem target/FIIS-bot-1.0-SNAPSHOT.jar ubuntu@IP:/home/ubuntu/
+   scp -i sua_chave.pem target/Telegram_Ticker_Bot-1.0-SNAPSHOT.jar ubuntu@IP:/home/ubuntu/
 
    # No servidor, crie um serviço systemd:
-   sudo tee /etc/systemd/system/fiis-bot.service << 'EOF'
+   sudo tee /etc/systemd/system/ticker-bot.service << 'EOF'
    [Unit]
-   Description=FIIS Telegram Bot
+   Description=Telegram Ticker Bot
    After=network.target
 
    [Service]
@@ -213,7 +241,7 @@ Melhor opção se você quer um servidor de verdade, com recursos generosos e se
    WorkingDirectory=/home/ubuntu
    Environment=TELEGRAM_BOT_TOKEN=seu_token_aqui
    Environment=TELEGRAM_BOT_USERNAME=nome_do_bot
-   ExecStart=/usr/bin/java -jar /home/ubuntu/FIIS-bot-1.0-SNAPSHOT.jar
+   ExecStart=/usr/bin/java -jar /home/ubuntu/Telegram_Ticker_Bot-1.0-SNAPSHOT.jar
    Restart=always
    RestartSec=10
 
@@ -221,14 +249,14 @@ Melhor opção se você quer um servidor de verdade, com recursos generosos e se
    WantedBy=multi-user.target
    EOF
 
-   sudo systemctl enable fiis-bot
-   sudo systemctl start fiis-bot
+   sudo systemctl enable ticker-bot
+   sudo systemctl start ticker-bot
    ```
 
 6. **Verificar status:**
    ```bash
-   sudo systemctl status fiis-bot
-   sudo journalctl -u fiis-bot -f
+   sudo systemctl status ticker-bot
+   sudo journalctl -u ticker-bot -f
    ```
 
 ---
@@ -239,12 +267,12 @@ O projeto inclui um `Dockerfile` multi-stage otimizado:
 
 ```bash
 # Build e executar localmente
-docker build -t fiis-bot .
-docker run -d --name fiis-bot \
+docker build -t ticker-bot .
+docker run -d --name ticker-bot \
   -e TELEGRAM_BOT_TOKEN=seu_token \
   -e TELEGRAM_BOT_USERNAME=nome_do_bot \
   --restart unless-stopped \
-  fiis-bot
+  ticker-bot
 ```
 
 ---
@@ -263,10 +291,9 @@ O workflow em `.github/workflows/build-deploy.yml` faz build e teste automaticam
 
 - O arquivo `.env` contém informações sensíveis e não deve ser versionado
 - O bot deve estar rodando continuamente para receber mensagens
-- As notícias são buscadas em tempo real a cada requisição
+- Os dados são buscados em tempo real a cada requisição
 - Em plataformas cloud, use **variáveis de ambiente** do painel (não `.env`)
 
 ## 📝 Licença
 
 Este projeto é de uso livre para fins educacionais e pessoais.
-

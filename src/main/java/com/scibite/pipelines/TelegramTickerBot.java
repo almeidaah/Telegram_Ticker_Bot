@@ -12,19 +12,19 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 /**
- * Classe do bot do Telegram para notícias de FIIs, ações BR/US e criptomoedas.
+ * Bot do Telegram para buscar indicadores financeiros e notícias de ativos.
  *
  * Funcionalidades:
- * - Recebe lista de tickers de FIIs, ações BR, ações US e/ou símbolos de criptomoedas
+ * - Recebe lista de tickers de ações BR, ações US, FIIs e/ou símbolos de criptomoedas
  * - Busca indicadores financeiros e notícias recentes
- * - Para FIIs: Dividend Yield, P/VP, Cotistas, Imóveis + notícias
  * - Para Ações BR: P/L, DY, P/VP, ROE, Dív.Líq/EBITDA, Margem EBITDA, LPA, Cresc.Rec 5a + notícias
  * - Para Ações US: P/E, P/S, EV/EBITDA, P/BV, PEG, FCF Yield, ROE, Margem EBITDA, etc + notícias (EN)
+ * - Para FIIs: Dividend Yield, P/VP, Cotistas, Imóveis + notícias
  * - Para Crypto: Preço, Market Cap, Ranking + notícias
  * - Retorna até 3 notícias por ativo (último mês)
  * - Responde com mensagem de instrução para comandos inválidos
  */
-public class FIINewsBot extends TelegramLongPollingBot {
+public class TelegramTickerBot extends TelegramLongPollingBot {
 
     // Token do bot fornecido pelo BotFather
     private final String botToken;
@@ -47,7 +47,7 @@ public class FIINewsBot extends TelegramLongPollingBot {
     // Classe utilitária para buscar indicadores de ações americanas
     private final USStockDataFetcher usStockDataFetcher;
 
-    // Padrão para validar tickers de FII (ex: HGLG11, MXRF11)
+    // Padrão para validar tickers de Fundos Imobiliários (ex: HGLG11, MXRF11)
     // Aceita 4 letras maiúsculas/minúsculas seguidas de 2 dígitos
     private static final Pattern FII_TICKER_PATTERN = Pattern.compile("^[A-Za-z]{4}\\d{2}$");
 
@@ -75,7 +75,7 @@ public class FIINewsBot extends TelegramLongPollingBot {
      * @param botToken Token do bot do Telegram
      * @param botUsername Nome de usuário do bot
      */
-    public FIINewsBot(String botToken, String botUsername) {
+    public TelegramTickerBot(String botToken, String botUsername) {
         this(botToken, botUsername, false);
     }
 
@@ -86,7 +86,7 @@ public class FIINewsBot extends TelegramLongPollingBot {
      * @param botUsername Nome de usuário do bot
      * @param disableSslVerification Se true, desabilita verificação SSL (apenas para NewsFetcher)
      */
-    public FIINewsBot(String botToken, String botUsername, boolean disableSslVerification) {
+    public TelegramTickerBot(String botToken, String botUsername, boolean disableSslVerification) {
         super(new DefaultBotOptions());
         this.botToken = botToken;
         this.botUsername = botUsername;
@@ -170,16 +170,16 @@ public class FIINewsBot extends TelegramLongPollingBot {
     }
 
     /**
-     * Classifica os símbolos da mensagem em FIIs, ações BR, ações US e criptomoedas.
+     * Classifica os símbolos da mensagem em fundos imobiliários, ações BR, ações US e criptomoedas.
      *
      * Regras de classificação:
-     * - FII: 4 letras + 2 dígitos (ex: HGLG11, MXRF11)
+     * - Fundos Imobiliários: 4 letras + 2 dígitos (ex: HGLG11, MXRF11)
      * - Ação BR: 4 letras + 1 dígito (ex: PETR3, VALE3, ITUB4)
      * - Ação US: prefixo $ + 1-5 letras (ex: $AAPL, $MSFT, $GOOGL)
      * - Crypto: 2-10 letras sem dígitos e reconhecida no CoinGecko (ex: BTC, ETH)
      *
      * @param message         Mensagem enviada pelo usuário
-     * @param fiiTickers      Lista para receber tickers de FII válidos
+     * @param fiiTickers      Lista para receber tickers de fundos imobiliários válidos
      * @param stockTickers    Lista para receber tickers de ações BR válidos
      * @param usStockTickers  Lista para receber tickers de ações US válidos
      * @param cryptoSymbols   Lista para receber símbolos de criptomoedas válidos
@@ -211,11 +211,11 @@ public class FIINewsBot extends TelegramLongPollingBot {
      * Processa a lista de tickers, busca notícias e envia a resposta formatada.
      *
      * @param chatId ID do chat para enviar a resposta
-     * @param tickers Lista de tickers de FII
+     * @param tickers Lista de tickers de Fundos Imobiliários
      */
     private void processTickersAndSendNews(long chatId, List<String> tickers) {
         StringBuilder response = new StringBuilder();
-        response.append("📊 *Indicadores e Notícias de FIIs*\n\n");
+        response.append("📊 *Indicadores e Notícias de Fundos Imobiliários*\n\n");
 
         for (String ticker : tickers) {
             System.out.println("🔍 Buscando dados para: " + ticker);
@@ -392,11 +392,11 @@ public class FIINewsBot extends TelegramLongPollingBot {
     }
 
     /**
-     * Formata a tabela de indicadores financeiros para um FII.
+     * Formata a tabela de indicadores financeiros para um Fundo Imobiliário.
      * Usa caracteres Unicode box-drawing para simular uma tabela no Telegram.
      *
-     * @param ticker Código do FII
-     * @param data   Indicadores financeiros do FII
+     * @param ticker Código do fundo
+     * @param data   Indicadores financeiros do fundo
      * @return String formatada com a tabela
      */
     private String formatIndicatorsTable(String ticker, FIIData data) {
@@ -498,12 +498,12 @@ public class FIINewsBot extends TelegramLongPollingBot {
      */
     private void sendWelcomeMessage(long chatId) {
         String welcomeMessage = """
-                🤖 *Bem-vindo ao FII, Ações & Crypto News Bot!*
+                🤖 *Bem-vindo ao Telegram Ticker Bot!*
                 
                 Este bot busca indicadores e notícias recentes sobre:
-                • *Fundos Imobiliários (FIIs)* — DY, P/VP, Cotistas, Imóveis
                 • *Ações BR (Ibovespa)* — P/L, DY, P/VP, ROE, Dív/EBITDA, LPA
                 • *US Stocks* — P/E, P/S, EV/EBITDA, PEG, ROE, FCF Yield
+                • *Fundos Imobiliários* — DY, P/VP, Cotistas, Imóveis
                 • *Criptomoedas* — Preço, Market Cap, Ranking
                 
                 *Como usar:*
@@ -511,11 +511,11 @@ public class FIINewsBot extends TelegramLongPollingBot {
                 Use `$` antes de tickers americanos.
                 
                 *Exemplos:*
-                `HGLG11, KNRI11, MXRF11` — FIIs
                 `PETR3, VALE3, ITUB4` — Ações BR
                 `$AAPL, $MSFT, $GOOGL` — US Stocks
+                `HGLG11, KNRI11, MXRF11` — Fundos Imobiliários
                 `BTC, ETH, SOL` — Criptomoedas
-                `HGLG11, PETR3, $AAPL, BTC` — Misto
+                `PETR3, $AAPL, HGLG11, BTC` — Misto
                 
                 📰 Fonte: Google News
                 📊 Até 3 notícias por ativo (último mês)
@@ -554,13 +554,13 @@ public class FIINewsBot extends TelegramLongPollingBot {
                 Use `$` antes de tickers americanos.
                 
                 *Exemplos:*
-                `HGLG11, KNRI11, MXRF11` — FIIs
                 `PETR3, VALE3, ITUB4` — Ações BR
                 `$AAPL, $MSFT, $GOOGL` — US Stocks
+                `HGLG11, KNRI11, MXRF11` — Fundos Imobiliários
                 `BTC, ETH, SOL, ADA` — Criptomoedas
-                `HGLG11, PETR3, $TSLA, BTC` — Misto
+                `PETR3, $TSLA, HGLG11, BTC` — Misto
                 
-                *Dica:* FIIs = 4 letras + 2 números (HGLG11). Ações BR = 4 letras + 1 número (PETR3). US Stocks = $TICKER ($AAPL). Crypto = símbolo (BTC, ETH).
+                *Dica:* Ações BR = 4 letras + 1 número (PETR3). US Stocks = $TICKER ($AAPL). Fundos = 4 letras + 2 números (HGLG11). Crypto = símbolo (BTC, ETH).
                 """;
 
         sendMessage(chatId, instructionMessage);
