@@ -1,0 +1,9 @@
+target/
+.env
+.git
+.gitignore
+*.md
+dependency-reduced-pom.xml
+.idea/
+*.iml
+.vscode/
