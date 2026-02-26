@@ -107,7 +107,7 @@ Telegram_Ticker_Bot/
 └── src/
     └── main/
         └── java/
-            └── com/scibite/pipelines/
+            └── telegram/ticker/bot/
                 ├── Main.java               # Classe principal
                 ├── TelegramTickerBot.java  # Bot do Telegram
                 ├── NewsFetcher.java        # Busca de notícias
