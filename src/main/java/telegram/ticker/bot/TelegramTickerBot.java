@@ -47,6 +47,9 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
     // Classe utilitária para buscar indicadores de ações americanas
     private final USStockDataFetcher usStockDataFetcher;
 
+    // Classe utilitária para encurtar URLs
+    private final UrlShortener urlShortener;
+
     // Padrão para validar tickers de Fundos Imobiliários (ex: HGLG11, MXRF11)
     // Aceita 4 letras maiúsculas/minúsculas seguidas de 2 dígitos
     private static final Pattern FII_TICKER_PATTERN = Pattern.compile("^[A-Za-z]{4}\\d{2}$");
@@ -95,6 +98,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
         this.cryptoDataFetcher = new CryptoDataFetcher(disableSslVerification);
         this.stockDataFetcher = new StockDataFetcher(disableSslVerification);
         this.usStockDataFetcher = new USStockDataFetcher(disableSslVerification);
+        this.urlShortener = new UrlShortener();
     }
 
     @Override
@@ -123,15 +127,9 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
 
         System.out.println("📩 Mensagem recebida: " + messageText);
 
-        // Verifica se é o comando /start
-        if (messageText.startsWith("/start")) {
+        // Verifica se é o comando /start ou /help
+        if (messageText.startsWith("/start") || messageText.startsWith("/help")) {
             sendWelcomeMessage(chatId);
-            return;
-        }
-
-        // Verifica se é o comando /help
-        if (messageText.startsWith("/help")) {
-            sendHelpMessage(chatId);
             return;
         }
 
@@ -245,7 +243,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(news.getLink()).append("\n");
+                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
                     }
                     response.append("\n");
                 }
@@ -291,7 +289,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(news.getLink()).append("\n");
+                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
                     }
                     response.append("\n");
                 }
@@ -338,7 +336,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(news.getLink()).append("\n");
+                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
                     }
                     response.append("\n");
                 }
@@ -384,7 +382,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 } else {
                     for (NewsItem news : newsItems) {
                         response.append("   👉 ").append(escapeMarkdown(news.getTitle())).append("\n");
-                        response.append("   🔗 ").append(news.getLink()).append("\n");
+                        response.append("   🔗 ").append(urlShortener.shorten(news.getLink())).append("\n");
                     }
                     response.append("\n");
                 }
@@ -506,17 +504,25 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
         String welcomeMessage = """
                 🤖 *Bem-vindo ao Telegram Ticker Bot!*
                 
-                Este bot busca *indicadores financeiros* e *notícias recentes* sobre ações, fundos imobiliários e criptomoedas.
+                Este bot busca indicadores e notícias recentes sobre:
+                • *Ações BR (Ibovespa)* — P/L, DY, P/VP, ROE, Dív/EBITDA, LPA
+                • *US Stocks* — P/E, P/S, EV/EBITDA, PEG, ROE, FCF Yield
+                • *Fundos Imobiliários* — DY, P/VP, Cotistas, Imóveis
+                • *Criptomoedas* — Preço, Market Cap, Ranking
                 
-                *Comece agora:* envie os códigos dos ativos separados por vírgulas.
+                *Como usar:*
+                Envie os códigos separados por vírgulas.
+                Use `$` antes de tickers americanos.
                 
-                *Exemplos rápidos:*
-                `PETR3, VALE3` — Ações BR
-                `$AAPL, $MSFT` — US Stocks
-                `HGLG11` — Fundos Imobiliários
-                `BTC, ETH` — Criptomoedas
+                *Exemplos:*
+                `PETR3, VALE3, ITUB4` — Ações BR
+                `$AAPL, $MSFT, $GOOGL` — US Stocks
+                `HGLG11, KNRI11, MXRF11` — Fundos Imobiliários
+                `BTC, ETH, SOL` — Criptomoedas
+                `PETR3, $AAPL, HGLG11, BTC` — Misto
                 
-                💡 Digite /help para ver o guia completo de uso.
+                📰 Fonte: Google News
+                📊 Até 3 notícias por ativo (último mês)
                 
                 ─────────────────────────
                 👨‍💻 *Criado por* — Fernando Almeida
@@ -525,64 +531,6 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
                 """;
 
         sendMessage(chatId, welcomeMessage);
-    }
-
-    /**
-     * Envia mensagem de ajuda detalhada explicando como usar o bot.
-     */
-    private void sendHelpMessage(long chatId) {
-        String helpMessage = """
-                ℹ️ *Guia de Uso — Telegram Ticker Bot*
-                
-                Este bot consulta indicadores financeiros e notícias de diversos tipos de ativos. Basta enviar os códigos e o bot retorna os dados automaticamente.
-                
-                ─────────────────────────
-                📌 *Tipos de ativos suportados:*
-                
-                🇧🇷 *Ações BR (Ibovespa)*
-                Formato: 4 letras + 1 número
-                Indicadores: P/L, Div. Yield, P/VP, ROE, Dív.Líq/EBITDA, Margem EBITDA, LPA, Cresc.Rec 5a
-                Exemplo: `PETR3`, `VALE3`, `ITUB4`
-                
-                🇺🇸 *US Stocks*
-                Formato: `$` + ticker (1-5 letras)
-                Indicadores: P/E, P/S, EV/EBITDA, P/BV, PEG, FCF Yield, ROE, Marg. EBITDA, Debt/EBITDA, Current Ratio, Div. Yield, Payout Ratio
-                Exemplo: `$AAPL`, `$MSFT`, `$GOOGL`
-                
-                🏢 *Fundos Imobiliários (FIIs)*
-                Formato: 4 letras + 2 números
-                Indicadores: Div. Yield, P/VP, Cotistas, Imóveis
-                Exemplo: `HGLG11`, `KNRI11`, `MXRF11`
-                
-                🪙 *Criptomoedas*
-                Formato: símbolo (2-10 letras)
-                Indicadores: Preço, Market Cap, Ranking
-                Exemplo: `BTC`, `ETH`, `SOL`
-                
-                ─────────────────────────
-                📝 *Como enviar:*
-                
-                Envie os códigos separados por *vírgula*, *ponto e vírgula* ou *espaço*.
-                Você pode misturar tipos diferentes na mesma mensagem.
-                
-                *Exemplos:*
-                `PETR3, $AAPL, HGLG11, BTC`
-                `VALE3 $TSLA MXRF11 ETH`
-                
-                ─────────────────────────
-                ⚠️ *Limites:*
-                • Máximo de *3 ativos* por mensagem
-                • Até *3 notícias* por ativo (último mês)
-                
-                📰 *Fonte de notícias:* Google News
-                
-                ─────────────────────────
-                *Comandos:*
-                /start — Mensagem de boas-vindas
-                /help — Este guia de ajuda
-                """;
-
-        sendMessage(chatId, helpMessage);
     }
 
     /**
