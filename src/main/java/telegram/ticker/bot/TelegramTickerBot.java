@@ -90,6 +90,19 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
      * @param disableSslVerification Se true, desabilita verificação SSL (apenas para NewsFetcher)
      */
     public TelegramTickerBot(String botToken, String botUsername, boolean disableSslVerification) {
+        this(botToken, botUsername, disableSslVerification, null);
+    }
+
+    /**
+     * Construtor do bot com opção de desabilitar verificação SSL e token do TinyURL.
+     *
+     * @param botToken Token do bot do Telegram
+     * @param botUsername Nome de usuário do bot
+     * @param disableSslVerification Se true, desabilita verificação SSL
+     * @param tinyUrlApiToken Token da API TinyURL v2 (pode ser null)
+     */
+    public TelegramTickerBot(String botToken, String botUsername, boolean disableSslVerification,
+                             String tinyUrlApiToken) {
         super(new DefaultBotOptions());
         this.botToken = botToken;
         this.botUsername = botUsername;
@@ -98,7 +111,7 @@ public class TelegramTickerBot extends TelegramLongPollingBot {
         this.cryptoDataFetcher = new CryptoDataFetcher(disableSslVerification);
         this.stockDataFetcher = new StockDataFetcher(disableSslVerification);
         this.usStockDataFetcher = new USStockDataFetcher(disableSslVerification);
-        this.urlShortener = new UrlShortener(disableSslVerification);
+        this.urlShortener = new UrlShortener(disableSslVerification, tinyUrlApiToken);
     }
 
     @Override
