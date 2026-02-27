@@ -160,9 +160,8 @@ public class CryptoDataFetcher {
             }
 
             // Busca dados de mercado
-            String url = String.format(
-                "%s?vs_currency=usd&ids=%s&order=market_cap_desc&sparkline=false",
-                COINGECKO_MARKETS_URL, coinId
+            String url = "%s?vs_currency=usd&ids=%s&order=market_cap_desc&sparkline=false".formatted(
+                    COINGECKO_MARKETS_URL, coinId
             );
 
             System.out.println("🪙 Buscando crypto: " + url);
@@ -262,10 +261,10 @@ public class CryptoDataFetcher {
     private String formatPrice(double price) {
         if (price == 0) return "N/D";
         if (price >= 1.0) {
-            return String.format("$%,.2f", price);
+            return "$%,.2f".formatted(price);
         } else {
             // Para preços muito baixos (memecoins), mostra mais casas decimais
-            return String.format("$%.8f", price);
+            return "$%.8f".formatted(price);
         }
     }
 
@@ -276,13 +275,13 @@ public class CryptoDataFetcher {
     private String formatMarketCap(double marketCap) {
         if (marketCap == 0) return "N/D";
         if (marketCap >= 1_000_000_000_000.0) {
-            return String.format("$%.1fT", marketCap / 1_000_000_000_000.0);
+            return "$%.1fT".formatted(marketCap / 1_000_000_000_000.0);
         } else if (marketCap >= 1_000_000_000.0) {
-            return String.format("$%.1fB", marketCap / 1_000_000_000.0);
+            return "$%.1fB".formatted(marketCap / 1_000_000_000.0);
         } else if (marketCap >= 1_000_000.0) {
-            return String.format("$%.1fM", marketCap / 1_000_000.0);
+            return "$%.1fM".formatted(marketCap / 1_000_000.0);
         } else {
-            return String.format("$%,.0f", marketCap);
+            return "$%,.0f".formatted(marketCap);
         }
     }
 

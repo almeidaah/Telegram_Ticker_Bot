@@ -45,7 +45,7 @@ public class NewsItem {
 
     @Override
     public String toString() {
-        return String.format("NewsItem{title='%s', link='%s'}", title, link);
+        return "NewsItem{title='%s', link='%s'}".formatted(title, link);
     }
 }
 

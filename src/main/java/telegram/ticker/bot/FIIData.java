@@ -53,7 +53,7 @@ public class FIIData {
 
     @Override
     public String toString() {
-        return String.format("FIIData{ticker='%s', dy='%s', pvp='%s', cotistas='%s', imoveis='%s'}",
+        return "FIIData{ticker='%s', dy='%s', pvp='%s', cotistas='%s', imoveis='%s'}".formatted(
                 ticker, dividendYield, pVp, cotistas, imoveis);
     }
 }

@@ -65,7 +65,7 @@ public class UrlShortener {
 
         try {
             String encoded = URLEncoder.encode(longUrl, StandardCharsets.UTF_8);
-            String apiUrl = String.format("%s?format=simple&url=%s", ISGD_API_URL, encoded);
+            String apiUrl = "%s?format=simple&url=%s".formatted(ISGD_API_URL, encoded);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))

@@ -168,8 +168,7 @@ public class NewsFetcher {
             String encodedQuery = URLEncoder.encode(searchQuery, StandardCharsets.UTF_8);
 
             // URL em inglês para notícias dos EUA
-            String url = String.format(
-                    "%s?q=%s&hl=en-US&gl=US&ceid=US:en",
+            String url = "%s?q=%s&hl=en-US&gl=US&ceid=US:en".formatted(
                     GOOGLE_NEWS_RSS_URL,
                     encodedQuery
             );
@@ -219,8 +218,7 @@ public class NewsFetcher {
             // hl=pt-BR: Idioma português do Brasil
             // gl=BR: Localização Brasil
             // ceid=BR:pt-419: Configuração de região/idioma
-            String url = String.format(
-                    "%s?q=%s&hl=pt-BR&gl=BR&ceid=BR:pt-419",
+            String url = "%s?q=%s&hl=pt-BR&gl=BR&ceid=BR:pt-419".formatted(
                     GOOGLE_NEWS_RSS_URL,
                     encodedQuery
             );

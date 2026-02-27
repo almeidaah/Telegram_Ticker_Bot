@@ -53,7 +53,7 @@ public class CryptoData {
 
     @Override
     public String toString() {
-        return String.format("CryptoData{symbol='%s', name='%s', price='%s', marketCap='%s', rank='%s'}",
+        return "CryptoData{symbol='%s', name='%s', price='%s', marketCap='%s', rank='%s'}".formatted(
                 symbol, name, price, marketCap, rank);
     }
 }

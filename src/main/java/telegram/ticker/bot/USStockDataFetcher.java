@@ -279,7 +279,7 @@ public class USStockDataFetcher {
         // Fallback para "raw"
         if (node.has("raw")) {
             double raw = node.get("raw").asDouble();
-            return String.format("%.2f%s", raw, suffix != null ? suffix : "");
+            return "%.2f%s".formatted(raw, suffix != null ? suffix : "");
         }
 
         return "N/A";
@@ -303,7 +303,7 @@ public class USStockDataFetcher {
         // Fallback para "raw" (converter para %)
         if (node.has("raw")) {
             double raw = node.get("raw").asDouble();
-            return String.format("%.2f%%", raw * 100);
+            return "%.2f%%".formatted(raw * 100);
         }
 
         return "N/A";
@@ -319,7 +319,7 @@ public class USStockDataFetcher {
 
             if (fcf != 0 && marketCap != 0) {
                 double yield = (fcf / marketCap) * 100;
-                return String.format("%.2f%%", yield);
+                return "%.2f%%".formatted(yield);
             }
         } catch (Exception e) {
             // Silenciar
@@ -337,7 +337,7 @@ public class USStockDataFetcher {
 
             if (totalDebt != 0 && ebitda != 0) {
                 double ratio = totalDebt / ebitda;
-                return String.format("%.2fx", ratio);
+                return "%.2fx".formatted(ratio);
             }
         } catch (Exception e) {
             // Silenciar

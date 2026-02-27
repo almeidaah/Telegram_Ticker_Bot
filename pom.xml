@@ -71,10 +71,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.15.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+          <release>21</release>
                 </configuration>
             </plugin>
 
@@ -115,25 +114,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <!-- OpenRewrite Maven Plugin -->
-            <plugin>
-                <groupId>org.openrewrite.maven</groupId>
-                <artifactId>rewrite-maven-plugin</artifactId>
-                <version>5.47.3</version>
-                <configuration>
-                    <activeRecipes>
-                        <recipe>com.yourorg.UpgradeToJava21</recipe>
-                    </activeRecipes>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.openrewrite.recipe</groupId>
-                        <artifactId>rewrite-migrate-java</artifactId>
-                        <version>2.31.1</version>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>
